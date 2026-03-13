@@ -78,9 +78,9 @@ export default function PojehatDashboard() {
           <ManualUpload />
         </div>
 
-        <div className="mt-auto p-4 bg-teal-500/10 rounded-[24px] border border-teal-500/20 backdrop-blur-sm shadow-sm">
-          <p className="text-xs text-teal-700 dark:text-teal-300 font-bold">Tier-3 Diagnostic Agent</p>
-          <p className="text-[10px] text-teal-600/80 dark:text-teal-400/80 mt-1">Ingest manuals to improve diagnostic accuracy.</p>
+        <div className="mt-auto p-4 bg-[#a48fa3]/10 rounded-[24px] border border-[#a48fa3]/20 backdrop-blur-sm shadow-sm">
+          <p className="text-xs text-[#a48fa3] font-bold">Tier-3 Diagnostic Agent</p>
+          <p className="text-[10px] text-[#a48fa3]/80 mt-1">Ingest manuals to improve diagnostic accuracy.</p>
         </div>
       </div>
 
@@ -88,7 +88,7 @@ export default function PojehatDashboard() {
       <div className="flex-1 flex flex-col relative bg-muted/20">
         <header className="h-16 border border-border/50 bg-card/50 backdrop-blur-xl flex items-center px-8 justify-between sticky top-4 mx-8 rounded-3xl z-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)]">
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20 rounded-full px-3">
+            <Badge variant="outline" className="bg-[#a48fa3]/10 text-[#a48fa3] border-[#a48fa3]/20 rounded-full px-3">
               Pojehat System Online v1.2.0-technical
             </Badge>
           </div>
@@ -180,15 +180,15 @@ export default function PojehatDashboard() {
             />
             <Button 
               size="icon"
-              className="absolute right-5 bottom-5 h-12 w-12 rounded-[22px] bg-[#7f92a9] hover:opacity-90 transition-all shadow-lg active:scale-95 disabled:grayscale disabled:opacity-50 text-white"
+              className="absolute right-5 bottom-5 h-12 w-12 rounded-[22px] bg-[#a48fa3] hover:opacity-90 transition-all shadow-lg active:scale-95 disabled:grayscale disabled:opacity-50 text-white"
               onClick={handleSend}
               disabled={loading || !input.trim()}
             >
               <Send size={24} />
             </Button>
           </div>
-          <p className="text-[10px] text-center text-muted-foreground mt-3 font-medium tracking-wide flex items-center justify-center gap-1.5 uppercase">
-            <Wrench size={10} className="text-[#7f92a9]" />
+          <p className="text-[10px] text-center text-[#a48fa3] mt-3 font-medium tracking-wide flex items-center justify-center gap-1.5 uppercase">
+            <Wrench size={10} className="text-[#a48fa3]" />
             EMPOWERED BY J. SERVO LLC. | WWW.JSERVO.COM | HYBRID TECHNICAL KNOWLEDGE BASE
           </p>
         </div>

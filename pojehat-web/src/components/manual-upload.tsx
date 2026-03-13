@@ -52,7 +52,7 @@ export function ManualUpload() {
           <button 
             onClick={() => setMode("file")}
             className={`flex-1 flex items-center justify-center gap-2 py-1.5 text-[10px] font-bold rounded-[14px] transition-all ${
-              mode === "file" ? "bg-background text-teal-600 dark:text-teal-400 shadow-sm" : "text-muted-foreground hover:text-foreground"
+              mode === "file" ? "bg-background text-[#a48fa3] shadow-sm" : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <UploadCloud size={12} />
@@ -61,7 +61,7 @@ export function ManualUpload() {
           <button 
             onClick={() => setMode("url")}
             className={`flex-1 flex items-center justify-center gap-2 py-1.5 text-[10px] font-bold rounded-[14px] transition-all ${
-              mode === "url" ? "bg-background text-teal-600 dark:text-teal-400 shadow-sm" : "text-muted-foreground hover:text-foreground"
+              mode === "url" ? "bg-background text-[#a48fa3] shadow-sm" : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <Globe size={12} />
@@ -89,7 +89,7 @@ export function ManualUpload() {
               type="file" 
               accept=".pdf" 
               onChange={(e) => setFile(e.target.files?.[0] || null)}
-              className="h-9 text-[10px] bg-muted/50 border-border cursor-pointer file:text-teal-600 dark:file:text-teal-400 file:font-bold rounded-xl"
+              className="h-9 text-[10px] bg-muted/50 border-border cursor-pointer file:text-[#a48fa3] file:font-bold rounded-xl"
             />
           </div>
         ) : (
@@ -107,7 +107,7 @@ export function ManualUpload() {
         )}
 
         <Button 
-          className="w-full h-10 text-xs bg-teal-600 hover:bg-teal-700 dark:bg-teal-500 dark:hover:bg-teal-600 font-bold rounded-xl shadow-md transition-all active:scale-[0.98]" 
+          className="w-full h-10 text-xs bg-[#a48fa3] hover:opacity-90 font-bold rounded-xl shadow-md transition-all active:scale-[0.98] text-white" 
           disabled={(!file && mode === "file") || (!url && mode === "url") || !context || loading}
           onClick={handleUpload}
         >
