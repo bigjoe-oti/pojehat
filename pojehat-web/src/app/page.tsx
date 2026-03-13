@@ -31,7 +31,7 @@ export default function PojehatDashboard() {
   }, [messages]);
 
   const handleSend = async () => {
-    if (!input.trim() || !vehicle.trim()) return;
+    if (!input.trim()) return;
 
     const userMsg = input;
     setInput("");
@@ -53,16 +53,16 @@ export default function PojehatDashboard() {
     <main className="flex h-screen w-full bg-background overflow-hidden transition-colors">
       {/* Sidebar */}
       <div className="w-80 border-r border-border bg-card/50 p-6 flex flex-col gap-6 overflow-y-auto">
-        <div className="flex items-center gap-3">
-          <div className="relative w-10 h-10 overflow-hidden rounded-2xl border border-border shadow-sm bg-white dark:bg-stone-900">
+        <div className="flex items-center gap-4">
+          <div className="relative w-12 h-12 overflow-hidden rounded-2xl border border-border shadow-sm bg-white dark:bg-stone-900">
             <Image 
               src="/pojehat-logo.png" 
               alt="Pojehat Logo" 
               fill 
-              className="object-contain p-1.5"
+              className="object-contain p-2"
             />
           </div>
-          <h1 className="text-xl font-bold tracking-tight">Pojehat<span className="text-teal-600 dark:text-teal-400">.AI</span></h1>
+          <h1 className="text-2xl font-black tracking-tighter">Pojehat<span className="text-[#7f92a9]">.AI</span></h1>
         </div>
         
         <div className="space-y-4">
@@ -89,14 +89,13 @@ export default function PojehatDashboard() {
         <header className="h-16 border border-border/50 bg-card/50 backdrop-blur-xl flex items-center px-8 justify-between sticky top-4 mx-8 rounded-3xl z-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)]">
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20 rounded-full px-3">
-              System Online
+              Pojehat System Online v1.2.0-technical
             </Badge>
-            <span className="text-xs text-muted-foreground font-medium">v1.2.0-technical</span>
           </div>
           <div className="flex items-center gap-4">
             <ThemeToggle />
             <div className="h-4 w-px bg-border/50" />
-            <Wrench className="h-5 w-5 text-muted-foreground hover:text-teal-500 transition-colors cursor-pointer" />
+            <Wrench className="h-5 w-5 text-muted-foreground hover:text-[#7f92a9] transition-colors cursor-pointer" />
           </div>
         </header>
 
@@ -112,7 +111,7 @@ export default function PojehatDashboard() {
                     height={64} 
                     className="mx-auto"
                   />
-                  <div className="absolute -bottom-2 -right-2 bg-teal-600 text-white p-1.5 rounded-full ring-4 ring-background">
+                  <div className="absolute -bottom-2 -right-2 bg-[#7f92a9] text-white p-1.5 rounded-full ring-4 ring-background">
                     <Wrench size={16} />
                   </div>
                 </div>
@@ -137,7 +136,7 @@ export default function PojehatDashboard() {
                 </div>
                 <Card className={`max-w-[85%] shadow-md rounded-[20px] ${
                   m.role === "user" 
-                    ? "bg-teal-600 text-white border-teal-700" 
+                    ? "bg-[#7f92a9] text-white border-[#7f92a9]" 
                     : "bg-card border-border text-foreground"
                 }`}>
                   <CardContent className="p-4 text-sm leading-relaxed whitespace-pre-wrap">
@@ -153,9 +152,9 @@ export default function PojehatDashboard() {
                 </div>
                 <Card className="bg-card border-border shadow-sm rounded-2xl">
                   <CardContent className="p-4 flex gap-1.5 items-center">
-                    <span className="w-1.5 h-1.5 bg-teal-500/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <span className="w-1.5 h-1.5 bg-teal-500/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <span className="w-1.5 h-1.5 bg-teal-500/80 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                    <span className="w-1.5 h-1.5 bg-[#7f92a9]/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <span className="w-1.5 h-1.5 bg-[#7f92a9]/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <span className="w-1.5 h-1.5 bg-[#7f92a9]/80 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                   </CardContent>
                 </Card>
               </div>
@@ -177,20 +176,20 @@ export default function PojehatDashboard() {
                   handleSend();
                 }
               }}
-              className="w-full min-h-[85px] max-h-[220px] p-5 pr-20 bg-card border border-border rounded-[32px] shadow-[0_10px_40px_rgb(0,0,0,0.06)] focus:ring-2 focus:ring-teal-500/50 focus:outline-none transition-all resize-none text-sm leading-relaxed"
+              className="w-full min-h-[85px] max-h-[220px] p-5 pr-20 bg-card border border-border rounded-[32px] shadow-[0_10px_40px_rgb(0,0,0,0.06)] focus:ring-2 focus:ring-[#7f92a9]/50 focus:outline-none transition-all resize-none text-sm leading-relaxed"
             />
             <Button 
               size="icon"
-              className="absolute right-5 bottom-5 h-12 w-12 rounded-[22px] bg-teal-600 hover:bg-teal-700 dark:bg-teal-500 dark:hover:bg-teal-600 transition-all shadow-lg active:scale-95 disabled:grayscale disabled:opacity-50"
+              className="absolute right-5 bottom-5 h-12 w-12 rounded-[22px] bg-[#7f92a9] hover:opacity-90 transition-all shadow-lg active:scale-95 disabled:grayscale disabled:opacity-50 text-white"
               onClick={handleSend}
-              disabled={loading || !input.trim() || !vehicle.trim()}
+              disabled={loading || !input.trim()}
             >
               <Send size={24} />
             </Button>
           </div>
           <p className="text-[10px] text-center text-muted-foreground mt-3 font-medium tracking-wide flex items-center justify-center gap-1.5 uppercase">
-            <Wrench size={10} className="text-teal-500" />
-            Empowered by Tier-3 Technical Grounding • Hybrid Knowledge Search
+            <Wrench size={10} className="text-[#7f92a9]" />
+            EMPOWERED BY J. SERVO LLC. | WWW.JSERVO.COM | HYBRID TECHNICAL KNOWLEDGE BASE
           </p>
         </div>
       </div>
