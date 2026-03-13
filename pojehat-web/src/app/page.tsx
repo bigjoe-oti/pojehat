@@ -85,8 +85,8 @@ export default function PojehatDashboard() {
       </div>
 
       {/* Chat Area */}
-      <div className="flex-1 flex flex-col relative bg-muted/20">
-        <header className="h-16 border border-border/50 bg-card/50 backdrop-blur-xl flex items-center px-8 justify-between sticky top-4 mx-8 rounded-3xl z-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)]">
+      <div className="flex-1 flex flex-col relative bg-muted/20 min-h-0">
+        <header className="h-24 border border-border/50 bg-card/50 backdrop-blur-xl flex items-center px-8 justify-between sticky top-4 mx-8 rounded-3xl z-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)] shrink-0">
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="bg-[#a48fa3]/10 text-[#a48fa3] border-[#a48fa3]/20 rounded-full px-3">
               Pojehat System Online v1.2.0-technical
@@ -95,12 +95,23 @@ export default function PojehatDashboard() {
           <div className="flex items-center gap-4">
             <ThemeToggle />
             <div className="h-4 w-px bg-border/50" />
-            <Wrench className="h-5 w-5 text-muted-foreground hover:text-[#7f92a9] transition-colors cursor-pointer" />
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-10 w-10 rounded-xl hover:text-[#a48fa3]"
+              onClick={() => {
+                setMessages([]);
+                setVehicle("");
+              }}
+              title="Reset Diagnostic Session"
+            >
+              <Wrench className="h-5 w-5" />
+            </Button>
           </div>
         </header>
 
-        <ScrollArea className="flex-1 p-8" customScrollRef={scrollRef}>
-          <div className="max-w-3xl mx-auto space-y-6 pb-24">
+        <ScrollArea className="flex-1 min-h-0" customScrollRef={scrollRef}>
+          <div className="max-w-3xl mx-auto space-y-3 p-8 pb-32">
             {messages.length === 0 && (
               <div className="text-center py-20 space-y-6">
                 <div className="relative inline-block p-6 bg-card rounded-3xl border border-border shadow-2xl">
@@ -134,12 +145,12 @@ export default function PojehatDashboard() {
                     <Image src="/pojehat-logo.png" alt="P" fill className="object-contain p-1.5" />
                   )}
                 </div>
-                <Card className={`max-w-[85%] shadow-md rounded-[20px] ${
+                <Card className={`max-w-[90%] shadow-md rounded-[20px] ${
                   m.role === "user" 
                     ? "bg-[#7f92a9] text-white border-[#7f92a9]" 
                     : "bg-card border-border text-foreground"
                 }`}>
-                  <CardContent className="p-4 text-sm leading-relaxed whitespace-pre-wrap">
+                  <CardContent className="py-2.5 px-4 text-sm leading-relaxed whitespace-pre-wrap">
                     {m.content}
                   </CardContent>
                 </Card>
