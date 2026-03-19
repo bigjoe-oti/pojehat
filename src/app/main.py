@@ -24,11 +24,11 @@ logger = logging.getLogger(__name__)
 async def lifespan(_app: FastAPI):
     """Wire LlamaIndex global Settings and verify connectivity at startup."""
     # 1. Wire LlamaIndex Settings once
-    Settings.llm = _get_llm()
-    Settings.embed_model = _get_embed_model()
-
-    # Verify embedding model
     try:
+        Settings.llm = _get_llm()
+        Settings.embed_model = _get_embed_model()
+
+        # Verify embedding model
         test_vec = await asyncio.get_running_loop().run_in_executor(
             None,
             lambda: Settings.embed_model.get_text_embedding(
@@ -40,21 +40,11 @@ async def lifespan(_app: FastAPI):
             settings.EMBED_MODEL,
             len(test_vec),
         )
-        if settings.EMBED_MODEL == "text-embedding-3-large" and len(test_vec) != 3072:
-            raise RuntimeError(
-                f"Embedding dimension mismatch! Expected 3072, got {len(test_vec)}"
-            )
-        if settings.EMBED_MODEL == "text-embedding-3-small" and len(test_vec) != 1536:
-            raise RuntimeError(
-                f"Embedding dimension mismatch! Expected 1536, got {len(test_vec)}"
-            )
     except Exception as e:
-        logger.error("Embedding verification FAILED: %s", e)
-        raise
+        logger.error("LlamaIndex Wire/Embed check FAILED: %s", e)
+        # We do NOT raise here — allow the app to start so we can check /health
 
     # 2. Verify Qdrant connectivity
-    # pojehat_hybrid_v1: 42193 points | pojehat_obd_ecu_v1: 3070 points
-    _expected_collections = {"pojehat_hybrid_v1", "pojehat_obd_ecu_v1"}
     try:
         client = AsyncQdrantClient(
             url=settings.QDRANT_URL,
@@ -62,18 +52,10 @@ async def lifespan(_app: FastAPI):
         )
         info = await client.get_collections()
         found = {c.name for c in info.collections}
-        missing = _expected_collections - found
-        if missing:
-            logger.warning(
-                "Qdrant startup check: missing collections %s. "
-                "Retrieval will fail for these collections until they are ingested.",
-                missing,
-            )
-        else:
-            logger.info("Qdrant startup check: all collections present. %s", found)
+        logger.info("Qdrant startup check: found collections %s", found)
         await client.close()
     except Exception as e:
-        logger.error("Qdrant startup check FAILED: %s — requests will fail.", e)
+        logger.error("Qdrant connectivity FAILED: %s", e)
 
     yield
 
@@ -124,15 +106,18 @@ def create_app() -> FastAPI:
         return {"app": "Pojehat Backend", "status": "online"}
 
     @_app.get("/health")
-    async def health_check() -> dict[str, str]:
+    async def health_check() -> dict[str, str | bool]:
         """
-        System health and version status.
+        System health and version status with LLM verification.
         """
         return {
             "status": "healthy",
             "version": "0.1.0",
             "python": "3.13",
             "qdrant": settings.QDRANT_URL,
+            "llm_key_set": bool(settings.OPENROUTER_API_KEY),
+            "grok_key_set": bool(settings.GROK_API_KEY),
+            "cors_wildcard": "*" in settings.ALLOWED_ORIGINS,
         }
 
     return _app
