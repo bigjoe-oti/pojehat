@@ -1,5 +1,5 @@
 # Ignore backend files for Vercel auto-detection
-main.py
+entrypoint.py
 pyproject.toml
 src/
 data/
@@ -10,3 +10,5 @@ docker-compose.yml
 Dockerfile
 # But keep pojehat-web/
 !pojehat-web/
+# And keep root public/ for fallback
+!public/
