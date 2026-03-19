@@ -22,7 +22,7 @@ import sys
 import time
 import uuid
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -324,7 +324,7 @@ def _build_payload(
         "total_chunks": total_chunks,
         "page_num": page_num,
         "is_image_page": is_image_page,
-        "ingested_at": datetime.now(timezone.utc).isoformat(),
+        "ingested_at": datetime.now(UTC).isoformat(),
     }
 
 
@@ -481,7 +481,7 @@ def _save_checkpoint(completed: set[str]) -> None:
 def _write_dlq(asset: Asset, error: str) -> None:
     """Append a structured failure record to the dead-letter queue."""
     entry = {
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "url": asset.url,
         "context": asset.context,
         "brand": asset.brand,
@@ -597,7 +597,7 @@ async def _process_asset(
 
         points: list[models.PointStruct] = []
         for local_i, ((chunk, page_num, is_img), dense) in enumerate(
-            zip(batch, dense_vecs)
+            zip(batch, dense_vecs, strict=False)
         ):
             global_idx = batch_start + local_i
             points.append(

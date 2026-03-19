@@ -1,13 +1,81 @@
-"""
-Main entry point for the Pojehat FastAPI application.
-"""
+import asyncio
+import logging
+import os
+from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from llama_index.core import Settings
+from qdrant_client import AsyncQdrantClient
 
 from src.app.api.routes import router as api_router
 from src.core.config import settings
+from src.domain.rag_engine import _get_embed_model, _get_llm
+
+# Configure application-level logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(levelname)s:     %(message)s",
+)
+logger = logging.getLogger(__name__)
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    """Wire LlamaIndex global Settings and verify connectivity at startup."""
+    # 1. Wire LlamaIndex Settings once
+    Settings.llm = _get_llm()
+    Settings.embed_model = _get_embed_model()
+
+    # Verify embedding model
+    try:
+        test_vec = await asyncio.get_running_loop().run_in_executor(
+            None,
+            lambda: Settings.embed_model.get_text_embedding(
+                "pojehat embedding verification"
+            )
+        )
+        logger.info(
+            "Embedding model verified — model=%s, vector_dim=%d",
+            settings.EMBED_MODEL,
+            len(test_vec),
+        )
+        if settings.EMBED_MODEL == "text-embedding-3-large" and len(test_vec) != 3072:
+            raise RuntimeError(
+                f"Embedding dimension mismatch! Expected 3072, got {len(test_vec)}"
+            )
+        if settings.EMBED_MODEL == "text-embedding-3-small" and len(test_vec) != 1536:
+            raise RuntimeError(
+                f"Embedding dimension mismatch! Expected 1536, got {len(test_vec)}"
+            )
+    except Exception as e:
+        logger.error("Embedding verification FAILED: %s", e)
+        raise
+
+    # 2. Verify Qdrant connectivity
+    # pojehat_hybrid_v1: 42193 points | pojehat_obd_ecu_v1: 3070 points
+    _expected_collections = {"pojehat_hybrid_v1", "pojehat_obd_ecu_v1"}
+    try:
+        client = AsyncQdrantClient(
+            url=settings.QDRANT_URL,
+            api_key=settings.QDRANT_API_KEY,
+        )
+        info = await client.get_collections()
+        found = {c.name for c in info.collections}
+        missing = _expected_collections - found
+        if missing:
+            logger.warning(
+                "Qdrant startup check: missing collections %s. "
+                "Retrieval will fail for these collections until they are ingested.",
+                missing,
+            )
+        else:
+            logger.info("Qdrant startup check: all collections present. %s", found)
+        await client.close()
+    except Exception as e:
+        logger.error("Qdrant startup check FAILED: %s — requests will fail.", e)
+
+    yield
 
 
 def create_app() -> FastAPI:
@@ -18,12 +86,21 @@ def create_app() -> FastAPI:
         title="Pojehat Backend",
         description="AI-Driven AutoTech RAG & ECU Tuning SaaS",
         version="0.1.0",
+        lifespan=lifespan,
     )
 
-    # Configure CORS
+    # Configure CORS — see ALLOWED_ORIGINS in config Settings for production origins
+    allowed_origins: list[str] = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        *settings.ALLOWED_ORIGINS.split(","),
+    ]
+
     _app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],  # Open to all origins for now
+        allow_origins=[origin.strip() for origin in allowed_origins if origin.strip()],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -50,4 +127,9 @@ def create_app() -> FastAPI:
 app = create_app()
 
 if __name__ == "__main__":
-    uvicorn.run("src.app.main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(
+        "src.app.main:app",
+        host="0.0.0.0",
+        port=int(os.environ.get("PORT", 8000)),
+        reload=False,
+    )

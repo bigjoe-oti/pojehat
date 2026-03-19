@@ -1,25 +1,72 @@
-# Environment
-.env
-.venv
-env/
-venv/
-
-# Python
+# ── Python ──────────────────────────────────────
 __pycache__/
 *.py[cod]
 *$py.class
-.ruff_cache/
-.pytest_cache/
+*.so
+*.egg
 *.egg-info/
 dist/
 build/
+.Python
 
-# Node
-node_modules/
-.next/
-out/
-build/
-dist/
+# ── Virtual environment ──────────────────────────
+.venv/
+venv/
+ENV/
+env/
 
-# macOS
+# ── Environment variables — NEVER commit ─────────
+.env
+.env.*
+!.env.example
+
+# ── Secrets ──────────────────────────────────────
+*.key
+*.pem
+*.cert
+secrets/
+
+# ── Local uploads and PDFs ───────────────────────
+/tmp/
+/pdfs/
+*.pdf
+*.png
+*.jpg
+*.jpeg
+
+# ── Qdrant local storage ─────────────────────────
+qdrant_storage/
+snapshots/
+
+# ── uv package manager ───────────────────────────
+.uv/
+
+# ── Ruff / linting cache ─────────────────────────
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ── Logs ─────────────────────────────────────────
+*.log
+logs/
+
+# ── IDE and OS ───────────────────────────────────
+.idea/
+.vscode/
+.cursor/
 .DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# ── Task and session files ───────────────────────
+task.md
+implementation_plan.md
+
+# ── Next.js (frontend is in pojehat-web/) ────────
+pojehat-web/.next/
+pojehat-web/node_modules/
+pojehat-web/.vercel/
+pojehat-web/tsconfig.tsbuildinfo

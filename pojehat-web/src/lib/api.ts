@@ -2,8 +2,9 @@
  * API utility functions for Pojehat communication.
  */
 
-const API_BASE = "http://localhost:8000/api/v1";
-
+const API_BASE = process.env.NEXT_PUBLIC_API_URL
+  ? `${process.env.NEXT_PUBLIC_API_URL}/api/v1`
+  : "http://localhost:8000/api/v1";
 export async function uploadOEMManual(file: File, vehicleContext: string) {
   const formData = new FormData();
   formData.append("file", file);
@@ -53,7 +54,21 @@ export async function askMechanicAgent(query: string, vehicleContext: string) {
   });
 
   if (!response.ok) {
-    throw new Error("Failed to query mechanic agent");
+    throw new Error(`Failed to query mechanic agent: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+export async function decodeVin(vin: string) {
+  const response = await fetch(`${API_BASE}/diagnostics/vin-decode`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ vin }),
+  });
+
+  if (!response.ok) {
+    throw new Error("VIN decode request failed");
   }
 
   return response.json();

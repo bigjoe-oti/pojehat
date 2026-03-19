@@ -3,13 +3,18 @@ Web Ingester Service - Enhanced with rate limiting and retry logic.
 """
 
 import asyncio
+import base64
+import json
+import logging
 import re
 from pathlib import Path
-from typing import List, Optional
+from typing import cast
 
 import httpx
 from bs4 import BeautifulSoup
 from llama_index.core import Document
+from qdrant_client import AsyncQdrantClient
+from qdrant_client.models import FieldCondition, Filter, MatchValue
 from tenacity import (
     AsyncRetrying,
     retry_if_exception_type,
@@ -18,7 +23,9 @@ from tenacity import (
 )
 
 from src.core.config import settings
-from src.domain.pdf_parser import ingest_manual
+from src.domain.pdf_parser import index_documents, ingest_manual
+
+logger = logging.getLogger(__name__)
 
 MAX_RETRIES = 5
 HTTP_TIMEOUT = 60.0
@@ -58,6 +65,18 @@ class WebIngester:
         }
         self.rate_limiter = RateLimiter(requests_per_second)
         self._session: httpx.AsyncClient | None = None
+        self._qdrant_client: AsyncQdrantClient | None = None
+
+    async def _get_qdrant_client(self) -> "AsyncQdrantClient":
+        """Get or create Qdrant client."""
+        if self._qdrant_client is None:
+            from qdrant_client import AsyncQdrantClient
+
+            self._qdrant_client = AsyncQdrantClient(
+                url=settings.QDRANT_URL,
+                api_key=settings.QDRANT_API_KEY,
+            )
+        return self._qdrant_client
 
     async def _get_session(self) -> httpx.AsyncClient:
         """Get or create HTTP session with connection pooling."""
@@ -75,7 +94,7 @@ class WebIngester:
         if self._session and not self._session.is_closed:
             await self._session.aclose()
 
-    async def fetch_manual_links(self, model_url: str) -> List[str]:
+    async def fetch_manual_links(self, model_url: str) -> list[str]:
         """
         Scrapes a model page for manual attachment links with retries.
         """
@@ -84,12 +103,12 @@ class WebIngester:
         for attempt in range(3):
             try:
                 await self.rate_limiter.acquire()
-                print(f"[*] Crawling {model_url} (Attempt {attempt + 1}/3)...")
+                logger.info("Crawling %s (Attempt %d/3)...", model_url, attempt + 1)
                 response = await client.get(model_url)
 
                 if response.status_code == 429:
                     wait_time = (attempt + 1) * 7
-                    print(f"[!] Rate limited. Backing off {wait_time}s...")
+                    logger.warning("Rate limited. Backing off %ds...", wait_time)
                     await asyncio.sleep(wait_time)
                     continue
 
@@ -110,7 +129,7 @@ class WebIngester:
                         links.append(href)
 
                 unique_links = list(set(links))
-                print(f"[+] Found {len(unique_links)} manual links.")
+                logger.info("Found %d manual links.", len(unique_links))
                 return unique_links
 
             except Exception as e:
@@ -120,7 +139,7 @@ class WebIngester:
 
         return []
 
-    async def extract_pdf_url(self, viewer_url: str) -> Optional[str]:
+    async def extract_pdf_url(self, viewer_url: str) -> str | None:
         """
         Extracts the direct PDF URL from a viewer page.
         Handles Nitro-lazy-loading attributes with retry logic.
@@ -165,14 +184,34 @@ class WebIngester:
                         return pdf_match.group(0)
 
                 except Exception as e:
-                    print(f"[!] Error resolving PDF viewer {viewer_url}: {e}")
+                    logger.warning("Error resolving PDF viewer %s: %s", viewer_url, e)
 
         return None
 
-    async def download_pdf(self, pdf_url: str, filename: str) -> Path:
+    async def _download_binary(
+        self, pdf_url: str, filename: str | None = None
+    ) -> Path:
         """
         Downloads a PDF from a URL to the local upload directory with retry.
+        If filename is not provided, it is extracted from the URL.
         """
+        if not filename:
+            # Extract filename from URL and remove query strings
+            filename = pdf_url.split("/")[-1].split("?")[0]
+            if not filename:
+                # Fallback for root-level URLs
+                import hashlib
+
+                filename = f"web_{hashlib.md5(pdf_url.encode()).hexdigest()[:8]}.pdf"
+
+            # Ensure it has a valid extension if we know it's a PDF
+            if not any(
+                filename.lower().endswith(ext)
+                for ext in [".pdf", ".jpg", ".jpeg", ".png", ".webp"]
+            ):
+                if ".pdf" in pdf_url.lower():
+                    filename += ".pdf"
+
         upload_dir = Path(settings.UPLOAD_DIR)
         upload_dir.mkdir(parents=True, exist_ok=True)
 
@@ -196,7 +235,7 @@ class WebIngester:
 
         return target_path
 
-    async def scrape_with_jina(self, url: str) -> Optional[str]:
+    async def scrape_with_jina(self, url: str) -> str | None:
         """
         Uses r.jina.ai to convert a URL to clean markdown with retry.
         """
@@ -219,9 +258,9 @@ class WebIngester:
                     response = await client.get(jina_url, headers=headers)
                     if response.status_code == 200:
                         return response.text
-                    print(f"[!] Jina error {response.status_code} for {url}")
+                    logger.warning("Jina error %d for %s", response.status_code, url)
                 except Exception as e:
-                    print(f"[!] Jina fetch failed for {url}: {e}")
+                    logger.warning("Jina fetch failed for %s: %s", url, e)
 
         return None
 
@@ -232,11 +271,10 @@ class WebIngester:
         Recursive scraper for charm.li using Jina Reader for markdown conversion.
         Enhanced with better rate limiting.
         """
-        print(f"[*] Jina-Crawl: Recursively scraping charm.li at {url}...")
+        logger.info("Jina-Crawl: Recursively scraping charm.li at %s...", url)
         visited = set()
-        to_visit = [url]
-        processed_count = 0
-        from src.domain.pdf_parser import index_documents
+        to_visit: list[str] = [url]
+        processed_count: int = 0
 
         client = await self._get_session()
 
@@ -271,7 +309,7 @@ class WebIngester:
 
                 if sub_links:
                     # Depth-First Search feel
-                    to_visit = sub_links + to_visit
+                    to_visit = cast(list[str], sub_links) + to_visit
 
                 # Content Extraction using Jina
                 # Only process pages that look like terminal content
@@ -286,62 +324,287 @@ class WebIngester:
                                 "source_type": "jina_scrape",
                             },
                         )
-                        index_documents([doc])
+                        await asyncio.get_event_loop().run_in_executor(
+                            None, index_documents, [doc]
+                        )
                         processed_count += 1
                         if processed_count % 5 == 0:
-                            print(f"[*] Jina ingested {processed_count} points...")
+                            logger.info("Jina ingested %d points...", processed_count)
 
                 # RPM compliance - already handled by rate_limiter
                 await asyncio.sleep(0.5)
 
             except Exception as e:
-                print(f"[!] Error processing {current_url}: {e}")
+                logger.warning("Error processing %s: %s", current_url, e)
                 continue
 
         return processed_count
 
-    async def process_url(self, url: str, vehicle_context: str):
+    async def _is_already_ingested(self, url: str) -> bool:
+        """
+        Checks if the URL has already been ingested into any automotive collection.
+        Returns True if a document with metadata source==url exists.
+        """
+
+        client = await self._get_qdrant_client()
+        # Collections to check (as defined in rag_engine.py)
+        collections = ["pojehat_hybrid_v1", "pojehat_obd_ecu_v1"]
+
+        for coll in collections:
+            try:
+                # Count is more efficient for existence checks
+                res = await client.count(
+                    collection_name=coll,
+                    count_filter=Filter(
+                        must=[
+                            FieldCondition(
+                                key="source", match=MatchValue(value=url)
+                            )
+                        ]
+                    ),
+                    exact=False,
+                )
+                if res.count > 0:
+                    return True
+            except Exception as e:
+                # Log error to help debug filter issues
+                logger.debug("Qdrant check failed for %coll: %s", coll, e)
+                continue
+        return False
+
+    async def _process_technical_image_with_vision(
+        self, local_path: Path, vehicle_context: str
+    ) -> str | None:
+        """
+        Submits a technical diagram to a Vision model to extract diagnostic text.
+        """
+        logger.info("Vision-Analysis: Digitizing diagram %s...", local_path.name)
+
+        try:
+            with open(local_path, "rb") as f:
+                base64_image = base64.b64encode(f.read()).decode("utf-8")
+
+            payload = {
+                "model": settings.VISION_MODEL_NAME,
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": (
+                                    "You are an automotive electrical engineer. "
+                                    f"Extract all technical details from this "
+                                    f"{vehicle_context} diagram. "
+                                    "Look for connector pinouts, wire colors, "
+                                    "fuse IDs, and sensor values. "
+                                    "If the image is not a technical diagram, "
+                                    "describe it briefly."
+                                ),
+                            },
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:image/jpeg;base64,{base64_image}"
+                                },
+                            },
+                        ],
+                    }
+                ],
+            }
+
+            async with httpx.AsyncClient(timeout=60.0) as client:
+                response = await client.post(
+                    "https://openrouter.ai/api/v1/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {settings.OPENROUTER_API_KEY}",
+                        "Content-Type": "application/json",
+                    },
+                    json=payload,
+                )
+                response.raise_for_status()
+                result = response.json()
+                return result["choices"][0]["message"]["content"]
+
+        except Exception as e:
+            logger.error("Vision extraction failed for %s: %s", local_path.name, e)
+            return None
+
+    async def _extract_pdf_text_via_ocr(
+        self, local_path: Path, vehicle_context: str = "Unknown"
+    ) -> str | None:
+        """
+        Extract text from scanned PDFs using OpenRouter's file-parser plugin
+        targeting the Mistral OCR engine.
+
+        Used as a fallback when pymupdf returns zero/garbage text.
+        Cost: ~$2.00 per 1k pages. Use judiciously.
+        """
+        logger.info("OCR-Analysis: Running Mistral OCR on %s...", local_path.name)
+
+        try:
+            with open(local_path, "rb") as f:
+                base64_file = base64.b64encode(f.read()).decode("utf-8")
+
+            # OpenRouter file-parser plugin payload
+            payload = {
+                "model": "mistralai/pixtral-large-2411",  # Plugin via model field
+                "messages": [{"role": "user", "content": "Extract all text."}],
+                "plugins": [
+                    {
+                        "id": "file-parser",
+                        "settings": {
+                            "engine": "mistral-ocr",  # High-fidelity automotive OCR
+                            "output_format": "markdown",
+                        },
+                    }
+                ],
+                "files": [
+                    {
+                        "content": base64_file,
+                        "filename": local_path.name,
+                        "mime_type": "application/pdf",
+                    }
+                ],
+            }
+
+            async for attempt in AsyncRetrying(
+                stop=stop_after_attempt(3),
+                wait=wait_exponential_jitter(initial=2, max=10),
+                retry=retry_if_exception_type(httpx.HTTPError),
+            ):
+                with attempt:
+                    async with httpx.AsyncClient(timeout=120.0) as client:
+                        response = await client.post(
+                            "https://openrouter.ai/api/v1/chat/completions",
+                            headers={
+                                "Authorization": (
+                                    f"Bearer {settings.OPENROUTER_API_KEY}"
+                                ),
+                                "Content-Type": "application/json",
+                            },
+                            json=payload,
+                        )
+                        response.raise_for_status()
+                        result = response.json()
+                        return result["choices"][0]["message"]["content"]
+
+        except Exception as e:
+            logger.error("Mistral OCR fallback failed for %s: %s", local_path.name, e)
+            return None
+
+    async def process_url(self, url: str, vehicle_context: str = "Unknown") -> None:
         """
         High-fidelity ingestion engine for CLI usage.
         Supports direct PDFs, images, Jina-crawls, and viewer fallbacks.
         """
-        print(f"\n{'=' * 60}\n[Pojehat Ingester] Processing: {url}\n{'=' * 60}")
+        logger.info("\n%s\n[Pojehat] Processing: %s\n%s", '=' * 60, url, '=' * 60)
 
         try:
+            # Step 0: Deduplication Check (Source Gate)
+            if await self._is_already_ingested(url):
+                logger.info("URL already exists in knowledge base: %s", url)
+                return
+
             # Case 1: Direct PDF
             if url.lower().endswith(".pdf"):
                 filename = url.split("/")[-1]
-                local_path = await self.download_pdf(url, filename)
+                local_path = await self._download_binary(url, filename)
                 await ingest_manual(str(local_path), vehicle_context=vehicle_context)
                 return
 
-            # Case 2: Technical Images (Fuses, Pinouts)
+            # Case X: Excel / Tabular Data
+            if url.lower().endswith((".xlsx", ".xls", ".csv")):
+                import pandas as pd
+
+                filename = url.split("/")[-1]
+                local_path = await self._download_binary(url, filename)
+                logger.info("Parsing Tabular Data: %s", filename)
+                try:
+                    if filename.endswith(".csv"):
+                        df = pd.read_csv(local_path)
+                    else:
+                        df = pd.read_excel(local_path)
+
+                    markdown_table = df.to_markdown(index=False)
+                    from src.domain.pdf_parser import index_documents
+                    doc = Document(
+                        text=f"TECHNICAL TABLE: {vehicle_context}\n\n{markdown_table}",
+                        metadata={
+                            "source": url,
+                            "vehicle_context": vehicle_context,
+                            "source_type": "tabular_data",
+                        }
+                    )
+                    index_documents([doc])
+                    logger.info("Ingested spreadsheet: %s", filename)
+                except Exception as e:
+                    logger.warning("Spreadsheet parsing failed: %s", e)
+                return
+
+            # Case Y: Structured JSON (DTCs / Protocols)
+            if url.lower().endswith((".json", ".jsonl")):
+                filename = url.split("/")[-1]
+                local_path = await self._download_binary(url, filename)
+                logger.info("Parsing Structured JSON: %s", filename)
+                try:
+                    with open(local_path) as f:
+                        if filename.endswith(".jsonl"):
+                            data = [json.loads(line) for line in f]
+                        else:
+                            data = json.load(f)
+
+                    # Convert to expert-readable MD
+                    md_text = f"STRUCTURED TECHNICAL DATA: {vehicle_context}\n"
+                    md_text += json.dumps(data, indent=2)
+
+                    doc = Document(
+                        text=md_text,
+                        metadata={
+                            "source": url,
+                            "vehicle_context": vehicle_context,
+                            "source_type": "structured_json",
+                        }
+                    )
+                    index_documents([doc])
+                    logger.info("Ingested JSON data: %s", filename)
+                except Exception as e:
+                    logger.warning("JSON parsing failed: %s", e)
+                return
+
+            # Case 2: Technical Images (Fuses, Pinouts) - UPGRADED WITH VISION
             if any(url.lower().endswith(ext) for ext in [".jpg", ".jpeg", ".png"]):
                 from src.domain.pdf_parser import index_documents
 
                 filename = url.split("/")[-1]
-                local_path = await self.download_pdf(url, filename)
-                # For images, we index the metadata and a placeholder
-                doc = Document(
-                    text=(
-                        f"TECHNICAL IMAGE: {vehicle_context} - {filename}\n"
-                        f"Source: {url}"
-                    ),
-                    metadata={
-                        "source": url,
-                        "vehicle_context": vehicle_context,
-                        "local_path": str(local_path),
-                        "source_type": "technical_image",
-                    },
+                local_path = await self._download_binary(url, filename)
+                vision_text = await self._process_technical_image_with_vision(
+                    local_path, vehicle_context
                 )
-                index_documents([doc])
-                print(f"[SUCCESS] Ingested technical image: {filename}")
+
+                if vision_text:
+                    doc = Document(
+                        text=vision_text,
+                        metadata={
+                            "source": url,
+                            "vehicle_context": vehicle_context,
+                            "source_type": "technical_diagram",
+                        },
+                    )
+                    await asyncio.get_event_loop().run_in_executor(
+                        None, index_documents, [doc]
+                    )
+                    logger.info("Ingested image via Vision: %s", filename)
+                else:
+                    logger.warning(
+                        "Vision extraction failed for %s — skipping.", filename
+                    )
                 return
 
-            # Case 3: charm.li or similar (HTML Nesting) - Use Jina Recursive Crawl
+            # Case 3: charm.li or similar (HTML Nesting)
             if "charm.li" in url or "workshop-manuals.com" in url:
                 count = await self.scrape_charm_li(url, vehicle_context)
-                print(f"[SUCCESS] Jina-powered crawl ingested {count} points.")
+                logger.info("Jina-powered crawl ingested %d points.", count)
                 return
 
             # Case 4: Traditional PDF Viewer (manuals.co) or general site
@@ -359,35 +622,35 @@ class WebIngester:
                     },
                 )
                 index_documents([doc])
-                print(f"[SUCCESS] Ingested {url} via Jina Reader.")
+                logger.info("Ingested %s via Jina Reader.", url)
                 return
 
             # Fallback to manuals.co style redirection
             viewer_links = await self.fetch_manual_links(url)
             pdf_urls = []
             for link in viewer_links[:5]:
-                print(f"[*] Extracting PDF from: {link}")
+                logger.info("Extracting PDF from: %s", link)
                 pdf_url = await self.extract_pdf_url(link)
                 if pdf_url:
                     pdf_urls.append(pdf_url)
                 await asyncio.sleep(2)
 
-            print(f"[+] Total PDFs to ingest: {len(pdf_urls)}")
+            logger.info("Total PDFs to ingest: %d", len(pdf_urls))
 
-            for i, pdf_url in enumerate(pdf_urls):
+            for _i, pdf_url in enumerate(pdf_urls):
                 filename = pdf_url.split("/")[-1]
                 if not filename.endswith(".pdf"):
                     filename += ".pdf"
 
-                local_path = await self.download_pdf(pdf_url, filename)
+                local_path = await self._download_binary(pdf_url, filename)
                 result = await ingest_manual(
                     str(local_path), vehicle_context=vehicle_context
                 )
-                print(f"[SUCCESS] Ingested {result['pages_processed']} pages.")
+                logger.info("Ingested %d pages.", result['pages_processed'])
                 await asyncio.sleep(1)
 
         except Exception as e:
-            print(f"\n[FATAL ERROR] Web ingestion failed: {e}")
+            logger.error("\nWeb ingestion failed: %s", e)
             raise e
 
 
