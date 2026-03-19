@@ -90,18 +90,27 @@ def create_app() -> FastAPI:
     )
 
     # Configure CORS — see ALLOWED_ORIGINS in config Settings for production origins
+    raw_origins = settings.ALLOWED_ORIGINS.split(",")
     allowed_origins: list[str] = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://localhost:5173",
         "http://127.0.0.1:5173",
-        *settings.ALLOWED_ORIGINS.split(","),
+        *[o.strip() for o in raw_origins if o.strip()],
     ]
+
+    # Handle wildcard for development/preview environments
+    if "*" in settings.ALLOWED_ORIGINS:
+        cors_origins = ["*"]
+        allow_credentials = False # Cannot use credentials with wildcard
+    else:
+        cors_origins = [origin.strip() for origin in allowed_origins if origin.strip()]
+        allow_credentials = True
 
     _app.add_middleware(
         CORSMiddleware,
-        allow_origins=[origin.strip() for origin in allowed_origins if origin.strip()],
-        allow_credentials=True,
+        allow_origins=cors_origins,
+        allow_credentials=allow_credentials,
         allow_methods=["*"],
         allow_headers=["*"],
     )

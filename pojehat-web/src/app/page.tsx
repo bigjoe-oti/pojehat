@@ -11,6 +11,13 @@ import { askMechanicAgent, decodeVin } from '@/lib/api';
 import { AlertTriangle, Car, Search, Send, ShieldCheck, User, Wrench } from 'lucide-react';
 import Image from 'next/image';
 import React, { useEffect, useRef, useState } from 'react';
+
+// Static Asset Imports (Guaranteed Resolution)
+import logoMain from '@/assets/pojehat-logo.png';
+import logoSidebarLight from '@/assets/pojehat-left-pane-square-logo500light.png';
+import logoSidebarDark from '@/assets/pojehat-left-pane-square-logo500.png';
+import logoBanner from '@/assets/poje-main-banner-logo-250.png';
+import logoTrans from '@/assets/pojehat-logo-trans-500.png';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import remarkBreaks from 'remark-breaks';
@@ -66,8 +73,8 @@ export default function PojehatDashboard() {
 
   // Prevent hydration mismatch: SSR/First client render must be identical
   const logoSrc = (mounted && resolvedTheme === 'dark')
-    ? '/pojehat-left-pane-square-logo500light.png'
-    : '/pojehat-left-pane-square-logo500.png';
+    ? logoSidebarLight.src
+    : logoSidebarDark.src;
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -404,7 +411,7 @@ export default function PojehatDashboard() {
         <header className="h-[77px] border border-border/50 bg-card/50 backdrop-blur-xl flex items-center px-8 justify-between sticky top-4 mx-8 rounded-[40px] z-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)] shrink-0">
           <div className="flex items-center gap-4">
             <div className="relative w-[180px] h-[50px] shrink-0 flex items-center justify-start ml-2">
-              <img src="/poje-main-banner-logo-250.png" alt="Pojehat Logo" className="h-full w-auto object-contain object-left" />
+              <img src={logoBanner.src} alt="Pojehat Logo" className="h-full w-auto object-contain object-left" />
             </div>
             <Badge variant="outline" className="bg-[#a48fa3]/10 text-[#a48fa3] border-[#a48fa3]/20 rounded-[20px] px-7 py-[14px] font-bold text-[10.5px] tracking-[0.05em] leading-tight max-w-[850px] text-center shadow-sm">
               Pojehat v1.3.2 - Tier III Diagnostics Agent | Error Code Panel - VIN Decoder - General Automotive Queries - Structured DTC Analysis & Reports
@@ -430,7 +437,7 @@ export default function PojehatDashboard() {
             {messages.length === 0 && (
               <div className="text-center py-20 space-y-6">
                 <div className="relative inline-block p-6 bg-card rounded-3xl border border-border shadow-2xl">
-                  <img src="/pojehat-logo.png" alt="Pojehat AI" width="64" height="64" className="mx-auto" />
+                  <img src={logoMain.src} alt="Pojehat AI" width="64" height="64" className="mx-auto" />
                   <div className="absolute -bottom-2 -right-2 bg-[#7f92a9] text-white p-1.5 rounded-full ring-4 ring-background">
                     <Wrench size={16} />
                   </div>
@@ -456,7 +463,7 @@ export default function PojehatDashboard() {
                       ? <AlertTriangle size={16} className="text-white" />
                       : <User size={18} className="text-muted-foreground" />
                   ) : (
-                    <img src="/pojehat-logo.png" alt="P" className="w-full h-full object-contain p-1.5" />
+                    <img src={logoMain.src} alt="P" className="w-full h-full object-contain p-1.5" />
                   )}
                 </div>
                 <Card className={`max-w-[90%] shadow-[0_2px_12px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.15)] rounded-[32px] ${
