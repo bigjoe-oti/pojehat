@@ -60,8 +60,8 @@ sequenceDiagram
 
 ### Tier 1: Local Identity (Instant, <1ms cache / <10ms table)
 
-- Engine: Local _WMI_TABLE + VEHICLE_CONTEXT_MAP in vehicle_specs.py.
-- Target: Priority Egyptian market models (Nissan, Peugeot, Toyota, Chery, MG).
+- Engine: Local _WMI_TABLE + VEHICLE_CONTEXT_MAP in vehicle_specs.py + Refactored MD Reference Corpus.
+- Target: Priority Egyptian market models (Nissan, Peugeot, Toyota, Chery, MG) + Expanded VIN Logic (Hyundai, Honda, Toyota, Mercedes, Land Rover).
 - Optimization: LRU Cache (500 entries) prevents redundant external API calls.
 
 ### Tier 2: Global Identity (Async, 400-800ms)
@@ -90,8 +90,8 @@ graph LR
     F --> G[Qdrant Vector Store]
     
     subgraph Collections
-        G --> H[pojehat_hybrid_v1]
-        G --> I[pojehat_obd_ecu_v1]
+        G --> H[pojehat_hybrid_v1: Technical Reference Library (WMI/VIN/Manuals)]
+        G --> I[pojehat_obd_ecu_v1: Protocol & Signal Data (DBC)]
     end
 ```
 

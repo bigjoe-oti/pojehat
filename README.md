@@ -16,12 +16,13 @@ graph LR
 ```
 
 - Fortified 3-Tier VIN Decoding:
-  - Tier 1 (Local): Instant WMI-based identification for Egyptian priority brands.
+  - Tier 1 (Local): Instant WMI-based identification for Egyptian priority brands + Refined MD reference tables.
   - Tier 2 (auto.dev): Global fallback for international marques.
   - Tier 3 (NHTSA): Public validation for imports.
+- Global Technical Reference Library: Ingested a high-fidelity corpus of VIN breakdown maps (Hyundai, Honda, Toyota, Mercedes, Land Rover) and WMI charts into `pojehat_hybrid_v1`.
+- Grounding Bar V2: Upgraded confidence visualization with 15% larger typography and enhanced responsive track designs.
 - Process-Level LRU Cache: Implemented a 500-entry in-memory cache to reduce external API latency by 99% for repeat VINs.
-- DBC Protocol Ingestion: New pipeline for ingesting structured CAN database files (.dbc) to support signal-level diagnostic RAG.
-- High-Aesthetic Frontend: Asynchronous "Double-Bubble" delivery system for instant technical briefs followed by deep RAG enrichment.
+- High-Aesthetic Frontend: Refined "Double-Bubble" system with automatic DTC pill styling and premium logo orchestration.
 
 ## 🛠 Core Capabilities
 
@@ -35,13 +36,16 @@ graph LR
 The engine contains expert-verified technical specs and protocol data for:
 
 - Nissan Sunny (B17) / Sentra
-- Toyota Corolla (E210 / TNGA)
+- Toyota Corolla (E210 / TNGA) / Hilux / Land Cruiser
 - Peugeot 301 / Citroën C-Elysée
 - Chery Tiggo 7 / Arrizo 5
 - MG ZS / ZS EV / HS
 - Renault Logan / Sandero / Duster
-- Hyundai Accent RB / Tucson TL/NX4
+- Hyundai Accent RB / Tucson TL/NX4 / Elantra
 - Kia Cerato BD / Sportage QL
+- Mercedes-Benz (W204, W205, W212, W213 Technical Logic)
+- Honda Civics / CR-V / Accord VIN Patterns
+- Land Rover Discovery / Range Rover L322/L405 VIN Logic
 
 ## 🚦 Quick Start
 

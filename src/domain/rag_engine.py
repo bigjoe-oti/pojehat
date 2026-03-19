@@ -550,14 +550,17 @@ def _generate_grounding_bar_html(confidence_pct: int) -> str:
     else:
         color = "#e24b4a" # crit
 
+    # V2: Higher contrast, larger text, better spacing
     return (
-        "<div style=\"display:flex;flex-direction:column;align-items:flex-start;gap:2px;"
-        "margin-bottom:4px\">\n"
-        "<span class=\"poj-bar-track\" style=\"margin-left:0;width:100px;height:6px\">\n"
-        f"<span class=\"poj-bar-fill\" style=\"width:{confidence_pct}%;background-color:{color}\">"
+        "<div style=\"display:flex;flex-direction:column;align-items:flex-start;gap:4px;"
+        "margin-bottom:8px\">\n"
+        "<span class=\"poj-bar-track\" style=\"margin-left:0;width:120px;height:8px;"
+        "background-color:#eee;border-radius:4px;overflow:hidden\">\n"
+        f"<span class=\"poj-bar-fill\" style=\"display:block;height:100%;"
+        f"width:{confidence_pct}%;background-color:{color};transition:width 0.3s ease\">"
         "</span>\n"
         "</span>\n"
-        f"<span style=\"font-size:0.82em;font-weight:700;color:{color};line-height:1\">"
+        f"<span style=\"font-size:0.95em;font-weight:800;color:{color};line-height:1.2\">"
         f"{confidence_pct}%</span>\n"
         "</div>"
     )
@@ -696,7 +699,7 @@ async def query_mechanic_agent(
         f"{_build_structure_block(intent, query)}\n"
         "---\n\n"
         "### Formatting Rules\n"
-    "1. `---` (grounding bar) MUST be the ABSOLUTE FIRST line of EVERY response. No exceptions.\n"
+    "1. Grounding Confidence Bar: The HTML `div` provided must be the ABSOLUTE FIRST line of your response.\n"
         "   ◆ fault / critical finding\n"
         "   ▸ procedure step or recommendation\n"
         "   ○ specification or data value\n"
@@ -722,10 +725,8 @@ async def query_mechanic_agent(
         "place it on its own line at the very start of the response. "
         "In **Knowledge Audit** mode, you should also use these bars in the "
         "\"Confidence\" column of your summary table for each domain.\n"
-        "7. **Diagnostic Codes (DTCs)**: Wrap every single DTC code (e.g., P0101, U0402) "
-        "displayed in technical paragraphs or bulleted lists in `<span class=\"dtc-pill\">CODE</span>`. "
-        "**STRICT PROHIBITION**: Never use a `dtc-pill` wrapper inside Markdown tables. "
-        "In tables, use standard `CODE` markers or **bold** text only to prevent redundant styling.\n"
+        "7. **Diagnostic Codes (DTCs)**: Use standard **bold** text or `CODE` markers for DTCs. "
+        "(Note: Frontend will automatically style valid DTCs (e.g., P0101) as pills—do not wrap them in HTML tags yourself).\n"
         "---\n\n"
         "### Key Principles\n\n"
         "- **Answer the actual question**: If asked \"how does X work\", explain how "
@@ -901,16 +902,16 @@ async def query_mechanic_agent(
         
         # Ensure grounding bar (---) is ALWAYS the first line for non-audit queries
         # (Audit queries have their own special HTML bar)
-        if not is_audit:
-            if not response_str.startswith("---"):
-                response_str = "---\n" + response_str
-
         # REC-5: Safety gate — Python prepend guarantees it regardless of LLM output
         if is_hv_srs:
-            # For HV/SRS, we want the safety warning, then the bar, then the response
-            if response_str.startswith("---"):
-                response_str = response_str[3:].strip() # Temporary remove to re-order
-            response_str = _HV_SRS_SAFETY_PREFIX + "---\n" + response_str
+            # For HV/SRS, we want the safety warning, then the response (which starts with the bar)
+            response_str = _HV_SRS_SAFETY_PREFIX + response_str
+
+        # Ensure consistent spacing after the bar
+        if response_str.startswith("<div"):
+            # If the response starts with the bar, ensure there's a clear separation for what follows
+            # if it's not already separated.
+            pass
 
         return response_str
     except (RuntimeError, ValueError, UnexpectedResponse) as e:

@@ -47,15 +47,17 @@ npm run dev
 
 ### Visual Formatting Constraints
 Frontend rendering depends on specific regex markers from the backend.
-- **DTCs**: Wrap in backticks or `<span class="dtc-pill">` for automatic pill styling.
+- **DTCs**: Valid DTC patterns (e.g. P0101) are automatically styled as pills by the frontend logic. Do NOT wrap them in HTML tags in the backend.
 - **Part Numbers**: Prefix with `p/n` for automatic blue highlighting.
+- **Grounding Bars**: Managed via `_generate_grounding_bar_html` in `rag_engine.py`. Current V2 style targets high contrast and `0.95em` typography.
 
 ## Data Ingestion
 
-To ingest the core technical corpus or local PDFs:
+To ingest the core technical corpus, local PDFs, or the new VIN/WMI Reference Library:
 ```bash
-# Ingest local PDF manuals in /pdfs directory
-.venv/bin/python src/scripts/ingest_local_pdfs.py
+# Ingest technical MD/PDF references in /md directory
+# (Requires pymupdf4llm, llama-index-embeddings-openai)
+python3 src/scripts/ingest_vins_md.py 
 ```
 
 ## Linting & Formatting
