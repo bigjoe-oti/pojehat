@@ -29,10 +29,8 @@ secrets/
 # ── Local uploads and PDFs ───────────────────────
 /tmp/
 /pdfs/
-*.pdf
-*.png
-*.jpg
-*.jpeg
+data/raw/
+*.log
 
 # ── Qdrant local storage ─────────────────────────
 qdrant_storage/
