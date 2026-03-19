@@ -6,22 +6,22 @@ Pojehat is built on a modern, asynchronous architecture designed for low-latency
 
 ```mermaid
 graph TD
-    subgraph Frontend [Frontend: Next.js 15 + React 19]
+    subgraph Frontend ["Frontend: Next.js 15 + React 19"]
         A[Tailwind CSS 4.0]
-        B[Shadcn UI / Radix]
-        C[React Markdown / Rehype]
+        B["Shadcn UI / Radix"]
+        C["React Markdown / Rehype"]
     end
 
-    subgraph Backend [Backend: FastAPI + Python 3.13]
+    subgraph Backend ["Backend: FastAPI + Python 3.13"]
         D[LlamaIndex Orchestration]
         E[Pydantic v2 Validation]
         F[PyMuPDF4LLM Parsing]
     end
 
-    subgraph Intelligence [Intelligence & Storage]
-        G[OpenRouter: Grok-4.1 / GPT-4o]
-        H[OpenAI: text-embedding-3-small]
-        I[Qdrant: Hybrid Vector Store]
+    subgraph Intelligence ["Intelligence & Storage"]
+        G["OpenRouter: Grok-4.1 / GPT-4o"]
+        H["OpenAI: text-embedding-3-small"]
+        I["Qdrant: Hybrid Vector Store"]
     end
 
     Frontend -->|Async/REST| Backend

@@ -90,8 +90,8 @@ graph LR
     F --> G[Qdrant Vector Store]
     
     subgraph Collections
-        G --> H[pojehat_hybrid_v1: Technical Reference Library (WMI/VIN/Manuals)]
-        G --> I[pojehat_obd_ecu_v1: Protocol & Signal Data (DBC)]
+        G --> H["pojehat_hybrid_v1: Technical Reference Library (WMI/VIN/Manuals)"]
+        G --> I["pojehat_obd_ecu_v1: Protocol & Signal Data (DBC)"]
     end
 ```
 
