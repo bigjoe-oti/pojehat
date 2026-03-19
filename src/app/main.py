@@ -109,6 +109,11 @@ def create_app() -> FastAPI:
     # Mount API Routes
     _app.include_router(api_router, prefix=settings.API_V1_STR)
 
+    @_app.get("/")
+    async def root():
+        """Root endpoint for platform health detection."""
+        return {"app": "Pojehat Backend", "status": "online"}
+
     @_app.get("/health")
     async def health_check() -> dict[str, str]:
         """
