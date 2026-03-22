@@ -106,7 +106,7 @@ def create_app() -> FastAPI:
         return {"app": "Pojehat Backend", "status": "online"}
 
     @_app.get("/health")
-    async def health_check() -> dict[str, str | bool]:
+    async def health_check() -> dict:
         """
         System health and version status with LLM verification.
         """
