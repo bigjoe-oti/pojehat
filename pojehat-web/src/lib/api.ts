@@ -2,9 +2,16 @@
  * API utility functions for Pojehat communication.
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL
-  ? `${process.env.NEXT_PUBLIC_API_URL}/api/v1`
-  : "http://localhost:8000/api/v1";
+let rawUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+// Standardize: Remove trailing slashes and ensure protocol
+rawUrl = rawUrl.replace(/\/+$/, "");
+if (!rawUrl.startsWith("http")) {
+  rawUrl = `https://${rawUrl}`;
+}
+
+// Global API Base
+const API_BASE = rawUrl.includes("/api/v1") ? rawUrl : `${rawUrl}/api/v1`;
 export async function uploadOEMManual(file: File, vehicleContext: string) {
   const formData = new FormData();
   formData.append("file", file);

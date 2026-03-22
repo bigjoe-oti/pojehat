@@ -144,12 +144,17 @@ export default function PojehatDashboard() {
       const result = await askMechanicAgent(dtcQuery, vehicle);
       setMessages((prev) => [...prev, { role: 'bot', content: result.response }]);
     } catch (error) {
-      console.error(error);
+      console.error("DTC Diagnosis Error:", error);
+      const errorMsg = error instanceof Error ? error.message : String(error);
       setMessages((prev) => [
         ...prev,
-        { role: 'bot', content: 'Error: Failed to run DTC diagnosis. Check engine connection.' },
+        { 
+          role: 'bot', 
+          content: `Error: Failed to run DTC diagnosis. (${errorMsg})\n\nCheck your Railway backend status and ensure NEXT_PUBLIC_API_URL is set correctly on Vercel.` 
+        },
       ]);
-    } finally {
+    }
+ finally {
       setDtcLoading(false);
     }
   };

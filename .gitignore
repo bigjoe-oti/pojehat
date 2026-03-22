@@ -68,3 +68,4 @@ pojehat-web/.next/
 pojehat-web/node_modules/
 pojehat-web/.vercel/
 pojehat-web/tsconfig.tsbuildinfo
+data/
