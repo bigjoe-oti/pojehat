@@ -283,10 +283,13 @@ export default function PojehatDashboard() {
         <div className="shrink-0 px-8 pt-4 pb-3">
           <Card className="border-[#a48fa3]/50 bg-background/40 backdrop-blur-md shadow-sm rounded-[20px] overflow-hidden">
             <CardContent className="p-0">
-              <img
+              <Image
                 src={logoSrc}
                 alt="Pojehat AI Logo"
                 className="w-full h-auto object-contain"
+                width={500}
+                height={500}
+                priority
               />
             </CardContent>
           </Card>
@@ -416,7 +419,7 @@ export default function PojehatDashboard() {
         <header className="h-[77px] border border-border/50 bg-card/50 backdrop-blur-xl flex items-center px-8 justify-between sticky top-4 mx-8 rounded-[40px] z-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)] shrink-0">
           <div className="flex items-center gap-4">
             <div className="relative w-[180px] h-[50px] shrink-0 flex items-center justify-start ml-2">
-              <img src={logoBanner.src} alt="Pojehat Logo" className="h-full w-auto object-contain object-left" />
+              <Image src={logoBanner.src} alt="Pojehat Logo" className="h-full w-auto object-contain object-left" width={250} height={50} priority />
             </div>
             <Badge variant="outline" className="bg-[#a48fa3]/10 text-[#a48fa3] border-[#a48fa3]/20 rounded-[20px] px-7 py-[14px] font-bold text-[10.5px] tracking-[0.05em] leading-tight max-w-[850px] text-center shadow-sm">
               Pojehat v1.3.2 - Tier III Diagnostics Agent | Error Code Panel - VIN Decoder - General Automotive Queries - Structured DTC Analysis & Reports
@@ -442,7 +445,7 @@ export default function PojehatDashboard() {
             {messages.length === 0 && (
               <div className="text-center py-20 space-y-6">
                 <div className="relative inline-block p-6 bg-card rounded-3xl border border-border shadow-2xl">
-                  <img src={logoMain.src} alt="Pojehat AI" width="64" height="64" className="mx-auto" />
+                  <Image src={logoMain.src} alt="Pojehat AI" width={64} height={64} className="mx-auto" />
                   <div className="absolute -bottom-2 -right-2 bg-[#7f92a9] text-white p-1.5 rounded-full ring-4 ring-background">
                     <Wrench size={16} />
                   </div>
@@ -468,7 +471,7 @@ export default function PojehatDashboard() {
                       ? <AlertTriangle size={16} className="text-white" />
                       : <User size={18} className="text-muted-foreground" />
                   ) : (
-                    <img src={logoMain.src} alt="P" className="w-full h-full object-contain p-1.5" />
+                    <Image src={logoMain.src} alt="P" width={36} height={36} className="w-full h-full object-contain p-1.5" />
                   )}
                 </div>
                 <Card className={`max-w-[90%] shadow-[0_2px_12px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.15)] rounded-[32px] ${
