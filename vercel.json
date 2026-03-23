@@ -1,6 +1,0 @@
-{
-  "framework": "nextjs",
-  "rootDirectory": "pojehat-web",
-  "buildCommand": "next build",
-  "outputDirectory": ".next"
-}
