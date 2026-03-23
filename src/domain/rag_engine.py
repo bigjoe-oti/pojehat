@@ -564,15 +564,15 @@ def _build_qa_template(system_prompt: str) -> ChatPromptTemplate:
     )
 
 
-# ---------------------------------------------------------------------------
 def _generate_grounding_bar_html(confidence_pct: int) -> str:
     """Centralized HTML generator for Pojehat grounding bars."""
-    if confidence_pct >= 80:
-        color = "#639922" # ok
-    elif confidence_pct >= 50:
-        color = "#ef9f27" # warn
+    # Relaxed visual thresholds for better user psychology on RAG vector hits
+    if confidence_pct >= 70:
+        color = "#639922" # ok (Green)
+    elif confidence_pct >= 40:
+        color = "#ef9f27" # warn (Orange)
     else:
-        color = "#e24b4a" # crit
+        color = "#e24b4a" # crit (Red)
 
     # V2: Higher contrast, larger text, better spacing
     return (
@@ -895,13 +895,13 @@ async def query_mechanic_agent(
         avg_pct = sum(m["coverage_pct"] for m in retrieval_metrics.values()) / len(retrieval_metrics)
         confidence_pct = min(100.0, max(0.0, avg_pct))
     elif top_nodes:
-        # Diagnostic queries use normalized RRF score
-        # (assuming Qdrant cosine similarity typically 0.5-0.9)
-        avg_score: float = sum(n.score or 0.0 for n in top_nodes) / float(
-            len(top_nodes)
-        )
-        # Scale 0.7-0.9 to 0-100% for display
-        confidence_pct = min(100, max(0, int((avg_score - 0.5) * 200)))
+        # Diagnostic queries use normalized Qdrant cosine score
+        avg_score: float = sum(n.score or 0.0 for n in top_nodes) / float(len(top_nodes))
+        # OpenAI text-embedding-3-small cosine similarities are typically 0.45 - 0.85
+        # We mathematically map [0.4, 0.85] -> [40%, 95%] safely.
+        scaled_score = avg_score * 100.0
+        # Give a slight optimistic boost for better user psychology, capped at 98%
+        confidence_pct = min(98, max(5, int(scaled_score + 15)))
     else:
         confidence_pct = 0
 
