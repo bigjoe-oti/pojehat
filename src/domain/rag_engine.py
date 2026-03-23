@@ -566,28 +566,8 @@ def _build_qa_template(system_prompt: str) -> ChatPromptTemplate:
 
 def _generate_grounding_bar_html(confidence_pct: int) -> str:
     """Centralized HTML generator for Pojehat grounding bars."""
-    # Relaxed visual thresholds for better user psychology on RAG vector hits
-    if confidence_pct >= 70:
-        color = "#639922" # ok (Green)
-    elif confidence_pct >= 40:
-        color = "#ef9f27" # warn (Orange)
-    else:
-        color = "#e24b4a" # crit (Red)
-
-    # V2: Higher contrast, larger text, better spacing
-    return (
-        "<div style=\"display:flex;flex-direction:column;align-items:flex-start;gap:4px;"
-        "margin-bottom:8px\">\n"
-        "<span class=\"poj-bar-track\" style=\"margin-left:0;width:120px;height:8px;"
-        "background-color:#eee;border-radius:4px;overflow:hidden\">\n"
-        f"<span class=\"poj-bar-fill\" style=\"display:block;height:100%;"
-        f"width:{confidence_pct}%;background-color:{color};transition:width 0.3s ease\">"
-        "</span>\n"
-        "</span>\n"
-        f"<span style=\"font-size:0.95em;font-weight:800;color:{color};line-height:1.2\">"
-        f"{confidence_pct}%</span>\n"
-        "</div>"
-    )
+    # The frontend responseFormatter now intercepts [[BAR:X]] and renders it safely natively.
+    return f"[[BAR:{confidence_pct}]]"
 
 
 async def query_mechanic_agent(
@@ -876,17 +856,12 @@ async def query_mechanic_agent(
                 f"| {source} | {m['chunk_count']} | {m['avg_rrf_score']} "
                 f"| {pct}% | {bar.replace('|', '&#124;')} |\n"
             )
-        # Add verbatim instructions with brand color codes for LLM to follow exactly
+        # Add verbatim instructions for LLM to follow exactly
         metrics_block += (
             "\n**STRICT VERBATIM INSTRUCTION (NO MODIFICATIONS):** When building your "
-            "domain table, you MUST copy the HTML from the 'Grounding Bar' column above "
-            "EXACTLY as it is written. Do NOT change classes, do NOT add background styles, "
-            "and do NOT invent your own HTML. Copy the full `<div>...</div>` into the "
-            "'Confidence' column. This allows the system's CSS to style them correctly.\n"
-            "\n**BRAND COLOR CODES (USE THESE ONLY):**\n"
-            "- Green (80%+): #639922\n"
-            "- Orange (50-79%): #ef9f27\n"
-            "- Red (<50%): #e24b4a\n"
+            "domain table, you MUST copy the placeholder from the 'Grounding Bar' column above "
+            "EXACTLY as it is written (e.g., `[[BAR:85]]`). Do NOT change the brackets, numbers, or invent your own HTML. "
+            "Copy the full `[[BAR:X]]` token into the 'Confidence' column. This allows the frontend to render the confidence bar correctly.\n"
         )
         system_prompt += metrics_block
 
