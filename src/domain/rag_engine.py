@@ -198,21 +198,45 @@ def _get_audit_llm() -> OpenRouter:
     )
 
 
+from typing import List
+import httpx
+from llama_index.core.embeddings import BaseEmbedding
+
+class CustomOpenRouterEmbedding(BaseEmbedding):
+    """Bypasses LlamaIndex Pydantic enums to safely hit OpenRouter."""
+    
+    def _get_query_embedding(self, query: str) -> List[float]:
+        # Sync fallback (mostly unused in async paths)
+        with httpx.Client() as client:
+            resp = client.post(
+                "https://openrouter.ai/api/v1/embeddings",
+                headers={"Authorization": f"Bearer {settings.OPENROUTER_API_KEY}"},
+                json={"model": settings.EMBED_MODEL, "input": query},
+                timeout=30.0
+            )
+            resp.raise_for_status()
+            return resp.json()["data"][0]["embedding"]
+
+    async def _aget_query_embedding(self, query: str) -> List[float]:
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                "https://openrouter.ai/api/v1/embeddings",
+                headers={"Authorization": f"Bearer {settings.OPENROUTER_API_KEY}"},
+                json={"model": settings.EMBED_MODEL, "input": query},
+                timeout=30.0
+            )
+            resp.raise_for_status()
+            return resp.json()["data"][0]["embedding"]
+
+    def _get_text_embedding(self, text: str) -> List[float]:
+        return self._get_query_embedding(text)
+
+    async def _aget_text_embedding(self, text: str) -> List[float]:
+        return await self._aget_query_embedding(text)
+
 @lru_cache(maxsize=1)
-def _get_embed_model() -> OpenAIEmbedding:
-    """
-    Embedding model singleton.
-    Uses OpenAIEmbedding with OpenRouter base URL.
-    Model is set directly — no post-init override required.
-    Verified: LlamaIndex OpenAIEmbedding accepts arbitrary model names
-    when additional_kwargs validation is bypassed via api_base override.
-    """
-    embed_model = OpenAIEmbedding(
-        model=settings.EMBED_MODEL,
-        api_key=settings.OPENROUTER_API_KEY,
-        api_base="https://openrouter.ai/api/v1",
-    )
-    return embed_model
+def _get_embed_model() -> BaseEmbedding:
+    return CustomOpenRouterEmbedding()
 
 
 def _parse_vehicle_filter(car_context: str) -> Filter | None:
