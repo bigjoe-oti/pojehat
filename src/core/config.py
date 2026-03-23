@@ -34,13 +34,13 @@ class Settings(BaseSettings):
     CARAPI_SECRET: str = ""
 
     # Model Config
-    EMBED_MODEL: str = "text-embedding-3-small"
     # 1536 dims — matches live Qdrant collections.
     # DO NOT change to text-embedding-3-large without full re-ingestion.
     # Collections were built with 1536 dims.
-
+    # Model Names (Default to GROK 4.1 for LLM + OpenAI text-embedding-3-small via OpenRouter fallback)
     LLM_MODEL_NAME: str = "x-ai/grok-4.1-fast"
     HYDE_MODEL_NAME: str = "x-ai/grok-4.1-fast"
+    EMBED_MODEL: str = "openai/text-embedding-3-small"
     VISION_MODEL_NAME: str = "mistralai/pixtral-large-2411"
     # Multimodal vision model for technical image analysis (pinouts, waveforms).
     # Called via OPENROUTER_API_KEY — NOT GROK_API_KEY.
