@@ -1,14 +1,12 @@
 # Ignore backend files for Vercel auto-detection
-entrypoint.py
-pyproject.toml
-src/
-data/
-runtime.txt
-Procfile
-railway.json
-docker-compose.yml
-Dockerfile
-# But keep pojehat-web/
-!pojehat-web/
-# And keep root public/ for fallback
-!public/
+/entrypoint.py
+/pyproject.toml
+/src/
+/data/
+/runtime.txt
+/Procfile
+/railway.json
+/docker-compose.yml
+/Dockerfile
+/nixpacks.toml
+/uv.lock
