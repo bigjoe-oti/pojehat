@@ -12,8 +12,8 @@ class Settings(BaseSettings):
     """
 
     # API Keys
-    OPENROUTER_API_KEY: str  # Used for LLMs and embeddings via OpenRouter
-    GROK_API_KEY: str        # Used for Grok LLM via OpenRouter
+    OPENROUTER_API_KEY: str = ""  # Used for LLMs and embeddings via OpenRouter
+    GROK_API_KEY: str = ""        # Used for Grok LLM via OpenRouter
     JINA_API_KEY: str | None = None
     AUTO_DEV_API_KEY: str | None = None  # auto.dev VIN Decode + OEM Build Data
 
@@ -25,8 +25,8 @@ class Settings(BaseSettings):
 
     # Qdrant Config
     # Production: Qdrant Cloud (AWS us-east-1)
-    QDRANT_URL: str
-    QDRANT_API_KEY: str
+    QDRANT_URL: str = ""
+    QDRANT_API_KEY: str = ""
 
     # CarAPI — Vehicle engine, trim, spec data (free tier)
     # https://carapi.app/docs/ — JWT obtained at runtime via /api/auth/login
