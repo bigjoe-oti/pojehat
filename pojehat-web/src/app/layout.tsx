@@ -1,7 +1,7 @@
 import { ThemeProvider } from '@/components/theme-provider';
 import type { Metadata } from 'next';
 import { Hubot_Sans, Space_Grotesk, Space_Mono } from 'next/font/google';
-import { Analytics } from '@vercel/analytics/react';
+import { Analytics } from '@vercel/analytics/next';
 import './globals.css';
 
 const spaceMono = Space_Mono({
