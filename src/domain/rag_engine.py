@@ -140,13 +140,13 @@ _COLLECTION_CFG: list[dict] = [
         "name": "pojehat_hybrid_v1",
         "vector_name": None,
         "sparse_vector_name": "text-sparse-new",
-        "enable_hybrid": True,
+        "enable_hybrid": False,
     },
     {
         "name": "pojehat_obd_ecu_v1",
         "vector_name": "text-dense",
         "sparse_vector_name": "text-sparse",
-        "enable_hybrid": True,
+        "enable_hybrid": False,
     },
 ]
 
